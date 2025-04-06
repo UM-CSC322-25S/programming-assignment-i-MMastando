@@ -3,8 +3,9 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAX_BOATS 120
+#define MAX_BOATS 120 // Maximum number of boats allowed in the system
 
+// Enum to represent the boat's location type
 typedef enum {
     SLIP,
     LAND,
@@ -12,6 +13,7 @@ typedef enum {
     STORAGE
 } LocationType;
 
+// Union to hold extra info depending on the location type
 typedef union {
     int slip_number;
     char bay_letter;
@@ -19,6 +21,7 @@ typedef union {
     int storage_number;
 } LocationInfo;
 
+// Struct representing a single boat
 typedef struct {
     char name[128];
     float length;
@@ -27,9 +30,11 @@ typedef struct {
     float amount_owed;
 } Boat;
 
-Boat* boats[MAX_BOATS];
-int boat_count = 0;
+// Global array of pointers to Boat structs and count tracker
+static Boat* boats[MAX_BOATS];
+static int boat_count = 0;
 
+// Parses a location type string into the corresponding enum
 LocationType parse_location_type(const char* str) {
     if (strcasecmp(str, "slip") == 0) return SLIP;
     if (strcasecmp(str, "land") == 0) return LAND;
@@ -38,6 +43,7 @@ LocationType parse_location_type(const char* str) {
     return STORAGE;
 }
 
+// Converts enum to string for file output
 const char* location_type_to_string(LocationType type) {
     switch (type) {
         case SLIP: return "slip";
@@ -48,16 +54,19 @@ const char* location_type_to_string(LocationType type) {
     }
 }
 
+// Comparison function for qsort to sort boats alphabetically by name
 int compare_boats(const void* a, const void* b) {
     Boat* boatA = *(Boat**)a;
     Boat* boatB = *(Boat**)b;
     return strcasecmp(boatA->name, boatB->name);
 }
 
+// Sorts boats alphabetically
 void sort_boats() {
     qsort(boats, boat_count, sizeof(Boat*), compare_boats);
 }
 
+// Loads boats from a CSV file into memory
 void load_boats(const char* filename) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -106,6 +115,7 @@ void load_boats(const char* filename) {
     sort_boats();
 }
 
+// Saves boats from memory to a CSV file
 void save_boats(const char* filename) {
     FILE* file = fopen(filename, "w");
     if (!file) {
@@ -127,6 +137,7 @@ void save_boats(const char* filename) {
     fclose(file);
 }
 
+// Prints the current boat inventory
 void print_inventory() {
     for (int i = 0; i < boat_count; i++) {
         Boat* b = boats[i];
@@ -141,6 +152,7 @@ void print_inventory() {
     }
 }
 
+// Inserts a boat in sorted order into the global array
 void insert_boat_sorted(Boat* boat) {
     int i = boat_count - 1;
     while (i >= 0 && strcasecmp(boats[i]->name, boat->name) > 0) {
@@ -151,6 +163,7 @@ void insert_boat_sorted(Boat* boat) {
     boat_count++;
 }
 
+// Parses and adds a boat from a CSV-formatted string
 void add_boat_from_csv_line(char* line) {
     if (boat_count >= MAX_BOATS) {
         printf("Marina is full.\n");
@@ -190,6 +203,7 @@ void add_boat_from_csv_line(char* line) {
     insert_boat_sorted(boat);
 }
 
+// Finds the index of a boat by name (case insensitive)
 int find_boat_index_by_name(const char* name) {
     for (int i = 0; i < boat_count; i++) {
         if (strcasecmp(boats[i]->name, name) == 0) {
@@ -199,6 +213,7 @@ int find_boat_index_by_name(const char* name) {
     return -1;
 }
 
+// Removes a boat by name
 void remove_boat(const char* name) {
     int index = find_boat_index_by_name(name);
     if (index == -1) {
@@ -212,6 +227,7 @@ void remove_boat(const char* name) {
     boat_count--;
 }
 
+// Accepts a payment towards a boat's balance
 void accept_payment(const char* name, float amount) {
     int index = find_boat_index_by_name(name);
     if (index == -1) {
@@ -225,6 +241,7 @@ void accept_payment(const char* name, float amount) {
     boats[index]->amount_owed -= amount;
 }
 
+// Advances the billing by one month
 void advance_month() {
     for (int i = 0; i < boat_count; i++) {
         float rate = 0;
@@ -238,16 +255,19 @@ void advance_month() {
     }
 }
 
+// Frees all allocated boat memory
 void free_all_boats() {
     for (int i = 0; i < boat_count; i++) {
         free(boats[i]);
     }
 }
 
+// Displays the main menu
 void show_menu() {
     printf("\n(I)nventory, (A)dd, (R)emove, (P)ayment, (M)onth, e(X)it : ");
 }
 
+// Main function with command-line argument for CSV file
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         printf("Usage: %s <BoatData.csv>\n", argv[0]);
